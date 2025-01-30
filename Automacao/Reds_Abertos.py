@@ -24,8 +24,8 @@ password_field = driver.find_element(By.ID, "formLogin:senha")
 login_button = driver.find_element(By.NAME, "formLogin:j_idt15")
 
 # Enviar as credenciais
-username_field.send_keys("1438704")
-password_field.send_keys("Valfr1d@")
+username_field.send_keys(usuario_pm)
+password_field.send_keys(senha_intranet)
 login_button.click()
 
 # Clicar na opção "Google Authenticator"
