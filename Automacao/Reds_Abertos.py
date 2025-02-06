@@ -5,6 +5,20 @@ from selenium.webdriver.support import expected_conditions as EC
 import pyautogui
 import pandas as pd
 import time
+from dotenv import load_dotenv
+import os
+
+# Carregar variáveis do arquivo .env
+load_dotenv()
+
+# Obter credenciais de forma segura
+usuario_pm = os.getenv("USUARIO_PM")
+senha_intranet = os.getenv("SENHA_INTRANE")
+
+# Verificar se as credenciais foram carregadas corretamente
+if not usuario_pm or not senha_intranet:
+    raise ValueError("Credenciais não encontradas! Verifique se o arquivo .env está configurado corretamente.")
+
 
 # Caminho do arquivo Excel
 excel_file = "C:\\Users\\valfr\\Downloads\\REDS_ABERTOS.xlsx"
@@ -34,18 +48,6 @@ google_auth_button = WebDriverWait(driver, 10).until(
 )
 google_auth_button.click()
 
-# Usar PyAutoGUI para lidar com um pop-up ou clique baseado em imagem
-print("Aguardando para usar PyAutoGUI...")
-time.sleep(5)  # Aguarde que o pop-up ou elemento apareça
-
-# Exemplo: Clique em um botão usando uma imagem
-button_location = pyautogui.locateCenterOnScreen("google_auth_button.png", confidence=0.8)
-if button_location:
-    pyautogui.moveTo(button_location)
-    pyautogui.click()
-    print("Botão clicado com sucesso usando PyAutoGUI!")
-else:
-    print("Botão não encontrado na tela!")
 
 # Aguardar a entrada manual do código do Google Authenticator
 input("Digite o código de autenticação no navegador e pressione ENTER para continuar...")
@@ -56,6 +58,7 @@ print("Autenticação concluída, prosseguindo com o envio de mensagens...")
 # Iterar pelos dados da aba "REDS" e enviar mensagens
 for _, row in df.iterrows():
     masp = row['Numero_PM']
+    digitador = row["Digitador"]  # Obtém o nome do digitador
     doc_num = row['Numero_REDS']
 
     # Preencher o campo "Para"
@@ -76,7 +79,7 @@ for _, row in df.iterrows():
         subject_field = WebDriverWait(driver, 10).until(
             EC.visibility_of_element_located((By.ID, "assunto-txt"))
         )
-        subject_field.send_keys("REDS em aberto")
+        subject_field.send_keys("🛑🛑REGISTROS EM ABERTO - ENCERRAMENTO DE REDS UU🛑🛑")
     except Exception as e:
         print(f"Erro ao interagir com o campo 'Assunto': {e}")
         continue
@@ -84,10 +87,16 @@ for _, row in df.iterrows():
     # Preencher o corpo da mensagem
     try:
         message_field = driver.find_element(By.ID, "conteudo-txt")
+        # Construção da mensagem
         message_text = (
-            f"Mensagem enviada pelo Sistema.\n"
-            f"Foi verificado que existe REDS em aberto sendo este usuário o relator.\n"
-            f"Respeitosamente, altere o documento número: {doc_num}"
+            f"Caro {digitador}\n\n"
+            f"Existe REDS {doc_num} em aberto sob sua responsabilidade. Por isso, incumbiu-me o Sr. Chefe da P3 / 27 BPM de encaminhar mensagem recomendando ENCERRAMENTO UU!!!\n\n"
+            f"Observação: O Comando do 27º BPM recomenda que os Comandos de Companhias inste os relatores ao cumprimento das diretrizes constantes no BOLETIM TÉCNICO Nº 02 / 2016, BEM COMO RESPONSABILIZAR ADMINISTRATIVAMENTE OS DIGITADORES contumazes.\n\n"
+            f"===================================================================================\n"
+            f"BOLETIM TÉCNICO Nº 02 / 2016 – DAOp/Cinds (BGPM Nº 12 de 16 de Fevereiro de 2016)\n\n"
+            f"\"Do Encerramento de REDS\n\n"
+            f"Diante disso, a recomendação técnica é para que o policial militar registre o REDS de todas as atendidas ou integradas para o militar, durante o turno de serviço, salvo em casos justificadamente comprovados e autorizado pelo CPU/CPCia.\"\n"
+            f"==================================================================================="
         )
         message_field.send_keys(message_text)
     except Exception as e:
