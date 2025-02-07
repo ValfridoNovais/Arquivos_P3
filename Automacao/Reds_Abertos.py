@@ -19,7 +19,6 @@ senha_intranet = os.getenv("SENHA_INTRANE")
 if not usuario_pm or not senha_intranet:
     raise ValueError("Credenciais não encontradas! Verifique se o arquivo .env está configurado corretamente.")
 
-
 # Caminho do arquivo Excel
 excel_file = "C:\\Users\\valfr\\Downloads\\REDS_ABERTOS.xlsx"
 
@@ -31,81 +30,108 @@ driver = webdriver.Chrome()
 driver.get("https://intranet.policiamilitar.mg.gov.br/autenticacaosso/login.jsf")
 
 # Realizar login na intranet
-username_field = WebDriverWait(driver, 10).until(
-    EC.presence_of_element_located((By.ID, "formLogin:textLogin"))
-)
-password_field = driver.find_element(By.ID, "formLogin:senha")
-login_button = driver.find_element(By.NAME, "formLogin:j_idt15")
+try:
+    username_field = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.ID, "formLogin:textLogin"))
+    )
+    password_field = driver.find_element(By.ID, "formLogin:senha")
+    login_button = driver.find_element(By.NAME, "formLogin:j_idt15")
 
-# Enviar as credenciais
-username_field.send_keys(usuario_pm)
-password_field.send_keys(senha_intranet)
-login_button.click()
+    username_field.send_keys(usuario_pm)
+    password_field.send_keys(senha_intranet)
+    login_button.click()
+    
+    print("Credenciais inseridas e login realizado.")
+except Exception as e:
+    print("Erro ao inserir credenciais e realizar login:", e)
 
 # Clicar na opção "Google Authenticator"
-google_auth_button = WebDriverWait(driver, 10).until(
-    EC.element_to_be_clickable((By.ID, "linkGoogle"))
-)
-google_auth_button.click()
-
+try:
+    google_auth_button = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.ID, "linkGoogle"))
+    )
+    google_auth_button.click()
+    print("Google Authenticator aberto. Insira o código manualmente.")
+except Exception as e:
+    print("Erro ao clicar no Google Authenticator:", e)
 
 # Aguardar a entrada manual do código do Google Authenticator
 input("Digite o código de autenticação no navegador e pressione ENTER para continuar...")
 
-# Continuar com a automação Selenium
-print("Autenticação concluída, prosseguindo com o envio de mensagens...")
+print("Autenticação concluída. Agora navegue até a janela com o botão 'Escrever' e pressione ENTER para continuar.")
+input("Pressione ENTER aqui no console quando estiver pronto para enviar mensagens.")
+
+# Clicar no botão "Escrever"
+try:
+    escrever_button = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.ID, "botao-escrever"))
+    )
+    escrever_button.click()
+except Exception:
+    try:
+        escrever_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CLASS_NAME, "escrever"))
+        )
+        escrever_button.click()
+    except Exception as e:
+        print("Erro ao clicar no botão 'Escrever':", e)
 
 # Iterar pelos dados da aba "REDS" e enviar mensagens
 for _, row in df.iterrows():
-    masp = row['Numero_PM']
-    digitador = row["Digitador"]  # Obtém o nome do digitador
+    masp = str(row['Numero_PM'])
+    digitador = row["Digitador"]
     doc_num = row['Numero_REDS']
 
-    # Preencher o campo "Para"
+    # Preencher o campo "Para" usando Selenium
     try:
-        to_field = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.ID, "cdk-drop-list-0"))
+        para_field = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, "usu1"))
         )
-        to_field.send_keys(str(masp))
-        time.sleep(1)
-        to_field.send_keys(Keys.ARROW_DOWN)
-        to_field.send_keys(Keys.ENTER)
+        para_field.click()
+        para_field.send_keys(masp)
+        time.sleep(2)  # Esperar a caixa de seleção aparecer
+        
+        # Selecionar o item correto da lista
+        item_selecao = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CLASS_NAME, "rol"))
+        )
+        item_selecao.click()
     except Exception as e:
-        print(f"Erro ao interagir com o campo 'Para': {e}")
+        print("Erro ao preencher o campo 'Para':", e)
         continue
 
-    # Preencher o campo "Assunto"
+    # Preencher o campo "Assunto" usando Selenium
     try:
         subject_field = WebDriverWait(driver, 10).until(
             EC.visibility_of_element_located((By.ID, "assunto-txt"))
         )
         subject_field.send_keys("🛑🛑REGISTROS EM ABERTO - ENCERRAMENTO DE REDS UU🛑🛑")
     except Exception as e:
-        print(f"Erro ao interagir com o campo 'Assunto': {e}")
+        print("Erro ao preencher o campo 'Assunto':", e)
         continue
 
-    # Preencher o corpo da mensagem
+    # Preencher o corpo da mensagem usando Selenium
     try:
         message_field = driver.find_element(By.ID, "conteudo-txt")
-        # Construção da mensagem
         message_text = (
             f"Caro {digitador}\n\n"
-            f"Existe REDS {doc_num} em aberto sob sua responsabilidade. Por isso, incumbiu-me o Sr. Chefe da P3 / 27 BPM de encaminhar mensagem recomendando ENCERRAMENTO UU!!!\n\n"
-            f"Observação: O Comando do 27º BPM recomenda que os Comandos de Companhias inste os relatores ao cumprimento das diretrizes constantes no BOLETIM TÉCNICO Nº 02 / 2016, BEM COMO RESPONSABILIZAR ADMINISTRATIVAMENTE OS DIGITADORES contumazes.\n\n"
+            f"Existe REDS {doc_num} em aberto sob sua responsabilidade. "
+            f"Por isso, incumbiu-me o Sr. Chefe da P3 / 27 BPM de encaminhar mensagem recomendando ENCERRAMENTO UU!!!\n\n"
             f"===================================================================================\n"
             f"BOLETIM TÉCNICO Nº 02 / 2016 – DAOp/Cinds (BGPM Nº 12 de 16 de Fevereiro de 2016)\n\n"
             f"\"Do Encerramento de REDS\n\n"
-            f"Diante disso, a recomendação técnica é para que o policial militar registre o REDS de todas as atendidas ou integradas para o militar, durante o turno de serviço, salvo em casos justificadamente comprovados e autorizado pelo CPU/CPCia.\"\n"
+            f"Diante disso, a recomendação técnica é para que o policial militar registre o REDS de todas as atendidas ou "
+            f"integradas para o militar, durante o turno de serviço, salvo em casos justificadamente comprovados e autorizado pelo CPU/CPCia.\"\n"
             f"==================================================================================="
         )
         message_field.send_keys(message_text)
     except Exception as e:
-        print(f"Erro ao interagir com o campo 'Mensagem': {e}")
+        print("Erro ao preencher o campo 'Mensagem':", e)
         continue
 
-    # Aguardar antes de enviar
+    # Aguarda para envio manual
     time.sleep(10)
-    input("Mensagem escrita, pressione ENTER aqui no console para continuar.")
+    input("Mensagem escrita. Pressione ENTER aqui no console para continuar.")
 
     # Enviar a mensagem
     try:
@@ -114,12 +140,12 @@ for _, row in df.iterrows():
         )
         send_button.click()
     except Exception as e:
-        print(f"Erro ao clicar no botão 'Enviar': {e}")
+        print("Erro ao clicar no botão 'Enviar':", e)
         continue
 
     time.sleep(2)
 
-# Manter o navegador aberto
+# Fechar o navegador
 print("Automação concluída. Feche o navegador manualmente.")
 input("Pressione ENTER para finalizar.")
 driver.quit()
